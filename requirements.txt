@@ -1,4 +1,6 @@
 selenium
-requests
+trio
+httpx
 loguru
+requests
 beautifulsoup4
