@@ -24,7 +24,6 @@ logger.add(
 
 
 options = webdriver.ChromeOptions()
-options.add_argument("start-maximized")
 options.add_argument('--headless')
 options.add_argument('--ignore-certificate-errors')
 options.add_argument('--ignore-ssl-errors')
@@ -34,6 +33,11 @@ options.add_experimental_option("excludeSwitches", ["enable-logging"])
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_argument(
     "service_args=['–ignore-ssl-errors=true', '–ssl-protocol=TLSv1']")
+
+# ip:port
+PROXY = "110.77.134.112"
+# 设置代理IP
+options.add_argument('--proxy-server=http://%s' % PROXY)
 
 driver = webdriver.Chrome(options=options,
                           executable_path=r'H:\Python38\chromedriver.exe')
