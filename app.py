@@ -1,6 +1,5 @@
 import os
 import re
-import time
 import trio
 import json
 import httpx
@@ -45,12 +44,8 @@ class EcSiteCrawler():
         file_path = f'./image_data/{category}{product_id}'
 
         if not os.path.exists(file_path):
-            logger.info(f'created path {file_path}')
             os.makedirs(file_path)
-        else:
-            logger.info(f'pass product {product_id}')
-            return
-
+            logger.info(f'created path {file_path}')
         try:
             async with httpx.AsyncClient() as client:
                 result = await client.get(image_url, headers={'User-Agent': random.choice(user_agent_list)})
