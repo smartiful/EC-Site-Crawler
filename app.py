@@ -24,9 +24,17 @@ logger.add(
 
 
 options = webdriver.ChromeOptions()
-options.add_experimental_option("excludeSwitches", ["enable-logging"])
+options.add_argument("start-maximized")
 options.add_argument('--headless')
-options.add_argument('--disable-gpu')
+options.add_argument('--ignore-certificate-errors')
+options.add_argument('--ignore-ssl-errors')
+prefs = {"profile.default_content_setting_values.notifications": 2}
+options.add_experimental_option("prefs", prefs)
+options.add_experimental_option("excludeSwitches", ["enable-logging"])
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_argument(
+    "service_args=['–ignore-ssl-errors=true', '–ssl-protocol=TLSv1']")
+
 driver = webdriver.Chrome(options=options,
                           executable_path=r'H:\Python38\chromedriver.exe')
 
@@ -124,11 +132,14 @@ class EcSiteCrawler():
 
     # download product image
     def download_product_image(self, product_url: str):
-        image_url_list = asyncio.run(self.get_product_image(product_url))
-        category_name = asyncio.run(self.get_category_name())
-        product_id = re.findall("\d+", product_url)[0]
-        for image_url in image_url_list:
-            trio.run(self.downloader, image_url, category_name, product_id)
+        try:
+            image_url_list = asyncio.run(self.get_product_image(product_url))
+            category_name = asyncio.run(self.get_category_name())
+            product_id = re.findall("\d+", product_url)[0]
+            for image_url in image_url_list:
+                trio.run(self.downloader, image_url, category_name, product_id)
+        except Exception as e:
+            logger.error(e)
 
     # start crawler
     def start_crawler(self):
