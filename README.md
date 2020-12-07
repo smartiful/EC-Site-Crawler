@@ -22,3 +22,9 @@ driver = webdriver.Chrome(options=options,
 ```
 python app.py
 ```
+
+## Docker
+
+### 1. clone所有文件
+### 2. `docker build -t web-crawler .`
+### 3. `docker run -it -v [文件路径]:/app web-crawler`  例：  `docker run -it -v /home/ubuntu/app:/app web-crawler`
