@@ -16,31 +16,33 @@ from selenium.common.exceptions import NoSuchElementException
 BASE_URL = 'https://zozo.jp'
 ZOZOTOWN_CATEGORY_URL = BASE_URL + '/category/'
 ZOZOUSED_CATEGORY_URL = BASE_URL + '/zozoused/category/'
+
 logger.add(
     "./logs/{time:YYYY-MM-DD}.log",
     format="{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}",
     level='DEBUG', encoding='utf-8'
 )
 
-
 options = webdriver.ChromeOptions()
-options.add_argument('--headless')
-options.add_argument('--ignore-certificate-errors')
-options.add_argument('--ignore-ssl-errors')
-prefs = {"profile.default_content_setting_values.notifications": 2}
-options.add_experimental_option("prefs", prefs)
-options.add_experimental_option("excludeSwitches", ["enable-logging"])
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-options.add_argument(
-    "service_args=['–ignore-ssl-errors=true', '–ssl-protocol=TLSv1']")
+options.add_experimental_option(
+    "prefs", {"profile.managed_default_content_settings.images": 2})
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-setuid-sandbox")
+options.add_argument("--remote-debugging-port=9222")
+options.add_argument("--disable-dev-shm-using")
+options.add_argument("--disable-extensions")
+options.add_argument("--disable-gpu")
+options.add_argument("start-maximized")
+options.add_argument("disable-infobars")
+options.add_argument("--headless")
 
-# ip:port
-PROXY = "110.77.134.112"
-# 设置代理IP
-options.add_argument('--proxy-server=http://%s' % PROXY)
+# 设置代理IP ip:port
+proxies = {
+    "https": "157.65.25.144:3128",
+}
+options.add_argument(f'--proxy-server=http://{proxies["https"]}')
 
-driver = webdriver.Chrome(options=options,
-                          executable_path=r'H:\Python38\chromedriver.exe')
+driver = webdriver.Chrome(options=options)
 
 with open('./data/fake_user_agent.txt', 'r') as f:
     user_agent_list = json.load(f)
@@ -60,7 +62,8 @@ class EcSiteCrawler():
             logger.info(f'created path {file_path}')
         try:
             async with httpx.AsyncClient() as client:
-                result = await client.get(image_url, headers={'User-Agent': random.choice(user_agent_list)})
+                headers = {'User-Agent': random.choice(user_agent_list)}
+                result = await client.get(image_url, headers=headers)
                 with open(file_path + image_url[image_url.rindex("/"):], 'wb') as f:
                     f.write(result.content)
                     logger.success(f'url: {image_url} | category: {category} ')
@@ -69,7 +72,8 @@ class EcSiteCrawler():
 
     # decode and parse url
     def soup_url(self, url: str) -> BeautifulSoup:
-        result = requests.get(url)
+        headers = {'User-Agent': random.choice(user_agent_list)}
+        result = requests.get(url, headers=headers, proxies=proxies, timeout=5)
         result.encoding = result.apparent_encoding
         soup = BeautifulSoup(result.text, "html.parser")
         logger.success(f'Requested url: {url}')
@@ -77,8 +81,14 @@ class EcSiteCrawler():
 
     # get all category url
     def get_all_category_url(self) -> list:
-        category_url_list = []
 
+        category_url_data = './data/category_url.txt'
+        if os.path.exists(category_url_data):
+            with open(category_url_data, 'r') as f:
+                category_url_list = json.load(f)
+                return category_url_list
+
+        category_url_list = []
         zozotown_soup = self.soup_url(ZOZOTOWN_CATEGORY_URL)
         h2 = zozotown_soup.find_all('h2')
         for tag in h2:
